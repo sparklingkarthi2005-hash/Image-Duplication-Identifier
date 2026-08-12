@@ -1,3 +1,6 @@
 Flask
 Pillow
 imagehash
+numpy
+opencv-python-headless
+gunicorn
