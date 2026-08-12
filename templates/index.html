@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dataset Image Deduplicator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Rich Deep Dark Cosmic Glow Background */
+            background: radial-gradient(circle at 15% 20%, #1e1b4b 0%, transparent 40%),
+                        radial-gradient(circle at 85% 80%, #0f766e 0%, transparent 40%),
+                        radial-gradient(circle at 50% 50%, #030712 0%, #020617 100%);
+            background-color: #020617;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 2.5rem 2rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 
+                        0 0 30px rgba(14, 165, 233, 0.15);
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(14, 165, 233, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 1.9rem;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            margin-bottom: 0.6rem;
+            font-weight: 800;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        input[type="file"] { display: none; }
+
+        .upload-box {
+            border: 2px dashed rgba(56, 189, 248, 0.25);
+            border-radius: 18px;
+            padding: 2.2rem 1.5rem;
+            background: rgba(3, 7, 18, 0.5);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-box:hover {
+            border-color: #38bdf8;
+            background: rgba(14, 165, 233, 0.05);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            padding: 13px 24px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .folder-btn {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+        }
+
+        #fileCount {
+            display: block;
+            margin-top: 1.2rem;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border: none;
+            color: white;
+            border-radius: 14px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .submit-btn:disabled {
+            background: #1e293b;
+            color: #64748b;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Scan Results Summary Box */
+        #results {
+            margin-top: 1.8rem;
+            display: none;
+            background: rgba(6, 78, 59, 0.25);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            text-align: left;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .stat-card span {
+            display: block;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .stat-card strong {
+            font-size: 1.2rem;
+            color: #38bdf8;
+        }
+
+        /* History Table Section */
+        .history-section {
+            margin-top: 2rem;
+            text-align: left;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1.5rem;
+        }
+
+        .history-title {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-list {
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-item {
+            background: rgba(3, 7, 18, 0.6);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item .time { color: #64748b; font-size: 0.75rem; }
+        .history-item .tag { color: #f43f5e; font-weight: 600; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <span class="badge">ROTATION-AWARE AI ENGINE</span>
+    <h2>Dataset Image Deduplicator</h2>
+    <p class="subtitle">Upload dataset images or select a folder to detect and remove duplicate or rotated images.</p>
+    
+    <form id="uploadForm">
+        <div class="upload-box">
+            <div class="btn-container">
+                <label for="fileInput" class="upload-btn">📷 Select Images</label>
+                <input type="file" id="fileInput" name="images" multiple accept="image/*">
+
+                <label for="folderInput" class="upload-btn folder-btn">📁 Select Folder</label>
+                <input type="file" id="folderInput" name="images" webkitdirectory directory multiple>
+            </div>
+            <span id="fileCount">No files selected</span>
+        </div>
+        
+        <button type="submit" class="submit-btn" id="runBtn">Run Scan & Download Clean ZIP</button>
+    </form>
+
+    <!-- Current Scan Result -->
+    <div id="results">
+        <h3 style="color:#10b981; font-size: 1.05rem;">Scan Completed & ZIP Downloaded! 🎉</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span>Total Uploaded</span>
+                <strong id="statTotal">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>Duplicates Found</span>
+                <strong id="statDuplicates" style="color:#f43f5e;">0</strong>
+            </div>
+            <div class="stat-card">
+                <span>Clean Dataset</span>
+                <strong id="statClean" style="color:#10b981;">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session History Section -->
+    <div class="history-section">
+        <div class="history-title">📜 Recent Scan History</div>
+        <div class="history-list" id="historyContainer">
+            <div style="color: #64748b; font-size: 0.85rem; text-align: center; padding: 10px;">No scans performed in this session yet.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const folderInput = document.getElementById('folderInput');
+    const fileCount = document.getElementById('fileCount');
+    const historyContainer = document.getElementById('historyContainer');
+
+    let selectedFiles = [];
+    let scanHistory = [];
+
+    fileInput.addEventListener('change', (e) => {
+        selectedFiles = Array.from(e.target.files);
+        fileCount.innerText = `✨ ${selectedFiles.length} image(s) selected`;
+        folderInput.value = '';
+    });
+
+    folderInput.addEventListener('change', (e) => {
+        selectedFiles = Array.from(e.target.files).filter(file => 
+            file.type.startsWith('image/') || 
+            /\.(jpg|jpeg|png|webp|bmp)$/i.test(file.name)
+        );
+        fileCount.innerText = `📁 ${selectedFiles.length} image(s) loaded from folder`;
+        fileInput.value = '';
+    });
+
+    function updateHistoryUI(total, duplicates, clean) {
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        scanHistory.unshift({
+            time: timeStr,
+            total: total,
+            duplicates: duplicates,
+            clean: clean
+        });
+
+        historyContainer.innerHTML = scanHistory.map(item => `
+            <div class="history-item">
+                <div>
+                    <strong>${item.total} Images Scanned</strong>
+                    <div class="time">${item.time}</div>
+                </div>
+                <div>
+                    <span class="tag">${item.duplicates} Duplicates</span> | 
+                    <span style="color:#10b981; font-weight:600;">${item.clean} Saved</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (selectedFiles.length === 0) {
+            alert('Please select images or a folder first!');
+            return;
+        }
+
+        const runBtn = document.getElementById('runBtn');
+        runBtn.innerText = "Scanning Rotations & Creating ZIP...";
+        runBtn.disabled = true;
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('images', file);
+        });
+
+        try {
+            const response = await fetch('/process', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Processing failed');
+
+            // Get total duplicates count from custom header if sent from server, or calculate UI estimates
+            const dupCountHeader = response.headers.get('X-Duplicate-Count') || 0;
+            const duplicatesFound = parseInt(dupCountHeader);
+            const totalFiles = selectedFiles.length;
+            const cleanFiles = Math.max(0, totalFiles - duplicatesFound);
+
+            // Trigger ZIP Download
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = 'cleaned_dataset_with_report.zip';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            // Display Statistics
+            document.getElementById('statTotal').innerText = totalFiles;
+            document.getElementById('statDuplicates').innerText = duplicatesFound;
+            document.getElementById('statClean').innerText = cleanFiles;
+            document.getElementById('results').style.display = 'block';
+
+            // Add to History
+            updateHistoryUI(totalFiles, duplicatesFound, cleanFiles);
+
+        } catch (error) {
+            alert('Error processing images. Check terminal logs.');
+        } finally {
+            runBtn.innerText = "Run Scan & Download Clean ZIP";
+            runBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
