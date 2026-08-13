@@ -34,3 +34,7 @@ This application automates the cleanup process using perceptual hashing and spat
 1. **Difference Hashing (dHash) & Perceptual Hashing (pHash):** Converts images to grayscale, scales them to structural grids, and generates 64-bit binary hashes resistant to scaling and resolution changes.
 2. **Spatial Matrix Transformations:** Applies $90^\circ, 180^\circ, 270^\circ$ rotations and horizontal flipping before comparison.
 3. **Hamming Distance Thresholding:** Uses bitwise XOR comparison to calculate exact and near-duplicate matching scores.
+
+## Comments :-
+
+Feedback and suggestions for this project is accepted to improving myself and it will leads the project working efficiency.
